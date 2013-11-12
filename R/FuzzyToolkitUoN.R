@@ -17,116 +17,114 @@
 #
 #---------------------------------------------
 
-gaussbMF <- function(mfName, x, mfParams) {
-# Inputs	: mfName(string) representing the name of the membership function, 
-#			x (numeric vector) which should be the same as the variable it will be added to (if at all), and 
-#			mfParams (numeric vector) representing the left_sigma, left_mean, right_sigma, right_mean, and height.
-# Outputs	: Numeric vector holding the values after being applied to a guassion curve with the above inputs.
+err_mfParamsNumnerNotMatched = "Incorrect amount for mfParams\n"
 
-	# Validate user input.
-	mfValidate(mfName, mfParams)
-		
-	left_sigma	<- mfParams[1]
-	left_mean	<- mfParams[2]
-	right_sigma	<- mfParams[3]
-	right_mean	<- mfParams[4]
-	height		<- mfParams[5]
-		
-	vec_boolA = (x <= left_mean)
-	vec_boolB = (x >= right_mean)
-	
-	# Returns a list of the mfName, mfType, mfX, mfParams and mfVals.	
-	list(
-		mfName= 	mfName,
-		mfType=	"gaussbmf",
-		mfX=		x,
-		mfParams=	mfParams,
-		mfVals =	(exp(-(x-left_mean)^2/(2*left_sigma^2))*vec_boolA + (1-vec_boolA))*
-				(exp(-(x-right_mean)^2/(2*right_sigma^2))*vec_boolB + (1-vec_boolB))			
-	)
+createMF <- function(mfType, mfName, x, mfParams, functionPostfix="_function") {
+  mfValidate(mfName)
+  y= evalMF(x, mfParams, mfType)
+  list(
+    mfName=   mfName,
+    mfType= 	mfType,
+    mfX= 		  x,
+    mfParams= mfParams,
+    mfVals= 	y
+  )
+}
+
+gbellMF_function <- function(x, mfParams) {
+  if(length(mfParams) != 3){
+    stop(err_mfParamsNumnerNotMatched)
+  }
+  a = mfParams[1]
+  b = mfParams[2]
+  c = mfParams[3]
+  y = 1/(1+(abs((x-c)/a))^(2*b))
+}
+
+gbellMF <- function(mfName, x, mfParams) {
+  createMF('gbellMF', mfName, x, mfParams)
+}
+
+gaussbMF_function <- function(x, mfParams) {
+  if(length(mfParams) != 5){
+    stop(err_mfParamsNumnerNotMatched)
+  }
+  left_sigma	<- mfParams[1]
+  left_mean	<- mfParams[2]
+  right_sigma	<- mfParams[3]
+  right_mean	<- mfParams[4]
+  height		<- mfParams[5]
+  
+  vec_boolA = (x <= left_mean)
+  vec_boolB = (x >= right_mean)
+  
+  (exp(-(x-left_mean)^2/(2*left_sigma^2))*vec_boolA + (1-vec_boolA))*
+    (exp(-(x-right_mean)^2/(2*right_sigma^2))*vec_boolB + (1-vec_boolB))
+}
+
+gaussbMF <- function(mfName, x, mfParams) {
+  createMF('gaussbMF', mfName, x, mfParams)
+}
+
+gaussMF_function <- function(x, mfParams) {
+  if(length(mfParams) != 3){
+    stop(err_mfParamsNumnerNotMatched)
+  }
+
+  sigma 	<- mfParams[1]
+  mean 	<- mfParams[2]
+  height	<- mfParams[3]
+  
+  height * exp(-(((arg - mean)^2)/(2*(sigma^2))))
 }
 
 gaussMF <- function(mfName, x, mfParams)  { 
-# Inputs	: mfName (String) representing the membership function name, 
-#			x (numeric vector) such as 1:10 representing bounds/range and 
-#			mfParams (numeric vector) of values sigma, mean, and height
-# Outputs	: Vector of values after being applied to a gaussian function
+	createMF('gaussMF', mfName, x, mfParams)
+}
 
-	# Validate user input.
-	mfValidate(mfName, mfParams)
-		
-	sigma 	<- mfParams[1]
-	mean 	<- mfParams[2]
-	height	<- mfParams[3]
-	
-	# Returns a list of the mfName, mfType, mfX, mfParams and mfVals.
-	list(
-		mfName=	mfName,
-		mfType=	"gaussmf",
-		mfX= 		x,
-		mfParams=	mfParams,
-		mfVals=	(height * exp(-(((x - mean)^2)/(2*(sigma^2)))))
-	)
+trapMF_function <- function(x, mfParams) {
+  if(length(mfParams) != 5){
+    stop(err_mfParamsNumnerNotMatched)
+  }
+
+  left_foot		<- mfParams[1]
+  left_shoulder		<- mfParams[2]
+  right_shoulder	<- mfParams[3]
+  right_foot		<- mfParams[4]
+  height			<- mfParams[5]
+  
+  y = pmax(pmin((x-left_foot)/(left_shoulder-left_foot), 
+                1,
+                (right_foot-x)/(right_foot-right_shoulder)),0) * height
+  
+  y[is.na(y)]= 1;
+  
+  return(y)
 }
 
 trapMF <- function(mfName, x, mfParams) {
-# Inputs	: mfName (String) representing membership function name, 
-#			x (numeric vector) such as 1:10 representing bounds/range and 
-#			mfParams (numeric vector) of values left_foot, left_shoulder, right_shoulder, right_foot and height
-# Outputs	: Numeric vector of values after being applied to a trapezoidal function
-	
-	# Validate user input.
-	mfValidate(mfName, mfParams)
-		
-	left_foot		<- mfParams[1]
-	left_shoulder		<- mfParams[2]
-	right_shoulder	<- mfParams[3]
-	right_foot		<- mfParams[4]
-	height			<- mfParams[5]
-		
-	y = pmax(pmin((x-left_foot)/(left_shoulder-left_foot), 
-		1,
-		(right_foot-x)/(right_foot-right_shoulder)),0) * height
+	createMF('trapMF', mfName, x, mfParams)
+}
 
-	y[is.na(y)]= 1; 
-	
-	# Returns a list of the mfName, mfType, mfX, mfParams and mfVals.
-	list(
-		mfName=	mfName,
-		mfType= 	"trapmf",
-		mfX= 		x,
-		mfParams= 	mfParams,
-		mfVals= 	y
-	)
+triMF_function <- function(x, mfParams) {
+  if(length(mfParams) != 4){
+    stop(err_mfParamsNumnerNotMatched)
+  }
+  
+  left		<- mfParams[1]
+  mean		<- mfParams[2]
+  right		<- mfParams[3]
+  height		<- mfParams[4]
+  
+  y= pmax(pmin( (x-left)/(mean-left), (right-x)/(right-mean) ), 0) * height
+  y[is.na(y)]= 1; 
+  
+  return(y)
 }
 
 triMF <- function(mfName, x, mfParams) {
-# Inputs	: mfName (String) representing membership function name, 
-#			x (numeric vector) such as 1:10 representing the bounds/range,
-#			mfParams (numeric vector) representing the left, mean, right and height values. 
-# Outputs	: Vector of values after being applied to a triangular function
-	
-	# Validate user input.
-	mfValidate(mfName, mfParams)
-	
-	left		<- mfParams[1]
-	mean		<- mfParams[2]
-	right		<- mfParams[3]
-	height		<- mfParams[4]
-
-	y= pmax(pmin( (x-left)/(mean-left), (right-x)/(right-mean) ), 0) * height
-	y[is.na(y)]= 1; 
-	
-	# Returns a list of the mfName, mfType, mfX, mfParams and mfVals.
-	list(
-		mfName= 	mfName,
-		mfType= 	"trimf",
-		mfX= 		x,
-		mfParams= 	mfParams,
-		mfVals= 	y
-	)
+	createMF('triMF', mfName, x, mfParams)
 }
-
 
 #---------------------------------------------
 #
@@ -272,18 +270,7 @@ addRule <- function(FIS, inputRule) {
 }
 
 evalMF <- function(x, mfParams, mfType) {
-# Inputs	: x(numeric vector) which represents the variable bounds/range, 
-#			mfParams (numeric vector) which contains the given parameters of the membership function to be evaluated,
-#			mfType (String) which contains the type of membership function (i.e. gaussMF, gaussbMF etc.), 
-#			mfName (String) representing the name for the membership function
-# Outputs	: Membership function with evaluated values
-
-	# Depending on the type of the Membership Function, create the appropriate Membership Function with the values entered
-	switch(mfType,
-		"gaussmf" = 	(gaussMF("mfName", x, mfParams))$mfVals,
-		"gaussbmf"= 	(gaussbMF("mfName", x, mfParams))$mfVals,
-		"trapmf"= 	(trapMF("mfName", x, mfParams))$mfVals,
-		"trimf"= 	(triMF("mfName", x, mfParams))$mfVals)	
+  do.call(paste(mfType,"_function",sep=""), list(x, mfParams))
 }
 
 
@@ -729,23 +716,10 @@ readFIS <- function(fileName) {
 					vectorStore= as.numeric(vectorStore)
 					mfHolder$mfParams[[j]] = vectorStore
 					
-					if(mfHolder$mfType[[j]] == "gaussmf") {
-						returnMF = 	gaussMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else if(mfHolder$mfType[[j]] == "gaussbmf") {
-						returnMF = 	gaussbMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else if(mfHolder$mfType[[j]] == "trimf") {
-						returnMF = 	triMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else {
-						returnMF = 	trapMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					}
+          returnMF = createMF(mfHolder$mfType[[j]], 
+                              mfHolder$mfName[[j]], 
+                              eval(parse(text=varHolder[[2]])), 
+                              mfHolder$mfParams[[j]])
 					
 					# Adds the membership function to the input variable.
 					FIS = addMF(FIS, "input", i, returnMF)
@@ -803,23 +777,10 @@ readFIS <- function(fileName) {
 					vectorStore= as.numeric(vectorStore)
 					mfHolder$mfParams[[j]] = vectorStore
 					
-					if(mfHolder$mfType[[j]] == "gaussmf") {
-						returnMF = 	gaussMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else if(mfHolder$mfType[[j]] == "gaussbmf") {
-						returnMF = 	gaussbMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else if(mfHolder$mfType[[j]] == "trimf") {
-						returnMF = 	triMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					} else {
-						returnMF = 	trapMF(mfHolder$mfName[[j]], 
-								eval(parse(text=varHolder[[2]])), 
-								mfHolder$mfParams[[j]])
-					}
+          returnMF = createMF(mfHolder$mfType[[j]],
+                              mfHolder$mfName[[j]],
+                              eval(parse(text=varHolder[[2]])),
+                              mfHolder$mfParams[[j]])
 					# Adds the membership function to the input variable.
 					FIS = addMF(FIS, "output", i, returnMF)
 					
@@ -892,8 +853,6 @@ plotMF <- function(FIS, varType, varIndex) {
 #			membership functions will be plotted to a graph.
 #Outputs	: A graphic containing the derived input data in graph format
 	
-	# Require the library, 'splines' for graphical chart creation.
-	require(splines)
 	# Set the plot character to nothing so it will not show on the graph.
 	pchVal= ""
 	# Set the y axis height.
@@ -909,14 +868,12 @@ plotMF <- function(FIS, varType, varIndex) {
 			colorRGB= runif(3,20,160)
 			# mfList is a convenience variable in that it saves a lot of extra code to access the same data.
 			mfList= FIS$inputList[[varIndex]]$membershipFunctionList[[i]]
-			if(mfList$mfType == 'gaussmf' || mfList$mfType == 'gaussbmf') {
-				curvePredict= predict(interpSpline(mfList$mfX, mfList$mfVals))
-				lines(curvePredict, col=colorRGB, type="o", xlim=c(1,length(FIS$inputList[[varIndex]]$inputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
-				text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
-			} else {
-				lines(mfList$mfX, mfList$mfVals, type="o", col=colorRGB, xlim=c(0,length(FIS$inputList[[varIndex]]$inputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
-				text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
+			plotFunc = function(x){
+			  do.call(paste(mfList$mfType,"_function",sep=""), list(x, mfList$mfParams))
 			}
+			par(new=TRUE)
+			plot(Vectorize(plotFunc), type="l", col=colorRGB, xlim=c(0,length(FIS$inputList[[varIndex]]$inputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
+			text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
 		}
 		title(paste("Membership functions from input variable '",FIS$inputList[[varIndex]]$inputName,"'", sep=""))
 	} else if(varType == "output") {
@@ -927,14 +884,12 @@ plotMF <- function(FIS, varType, varIndex) {
 			colorRGB= runif(3,20,160)
 			# mfList is a convenience variable in that it saves a lot of extra code to access the same data.
 			mfList= FIS$outputList[[varIndex]]$membershipFunctionList[[i]]
-			if(mfList$mfType == 'gaussmf' || mfList$mfType == 'gaussbmf') {
-				curvePredict= predict(interpSpline(mfList$mfX, mfList$mfVals))
-				lines(curvePredict, col=colorRGB, type="o", xlim=c(0,length(FIS$outputList[[varIndex]]$outputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
-				text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
-			} else {
-				lines(mfList$mfX, mfList$mfVals, type="o", col=colorRGB, xlim=c(0,length(FIS$outputList[[varIndex]]$outputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
-				text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
+			plotFunc = function(x){
+			  do.call(paste(mfList$mfType,"_function",sep=""), list(x, mfList$mfParams))
 			}
+      par(new=TRUE)
+			plot(Vectorize(plotFunc), type="l", col=colorRGB, xlim=c(0,length(FIS$outputList[[varIndex]]$outputBounds)), ylim=c(0,1.1), ann=FALSE, pch=pchVal)
+			text(match(TRUE,mfList$mfVals==max(mfList$mfVals))-1,1.025,mfList$mfName)
 		}
 		title(paste("Membership functions from output variable '",FIS$outputList[[varIndex]]$outputName,"'", sep=""))
 	} else {
@@ -1076,7 +1031,7 @@ evalFIS <- function(inputStack, fis, numPoints=101) {
 			if( fis$impMethod == 'prod' ){	
 				finalOutputValues = temp * outputMfVals
 			} else if ( fis$impMethod == 'min' ){
-			finalOutputValues = pmin(temp, outputMfVals)
+			  finalOutputValues = pmin(temp, outputMfVals)
 			} else {
 				stop("Unsupported implication method\n")
 			}
@@ -1110,7 +1065,7 @@ meshgrid <- function(a,b) {
 }
 
 
-gensurf <- function(fis, ix1=1, ix2=2, ox1=1) {
+gensurf <- function(fis, ix1=1, ix2=2, ox1=1, theta=-30, phi=30) {
 #Inputs		: A FIS structure
 #Outputs	: A 3-D graph with two inputs on the x and y axes, and one ouput on the z
 	
@@ -1142,7 +1097,7 @@ gensurf <- function(fis, ix1=1, ix2=2, ox1=1) {
 
  	persp(x_values, y_values, z_values, 
     	xlab=i1$inputName, ylab=i2$inputName, zlab=o1$outputName, 
-    	theta=-30, phi=30, col=rainbow(15)[16-h_values], ticktype='detailed')
+    	theta=theta, phi=phi, col=rainbow(15)[16-h_values], ticktype='detailed')
 }
 
 
@@ -1153,12 +1108,10 @@ gensurf <- function(fis, ix1=1, ix2=2, ox1=1) {
 #---------------------------------------------
 
 
-mfValidate <- function(mfName, mfParams) {
+mfValidate <- function(mfName) {
 #Inputs	: mfName (String) representing name of membership function, 
 #			mfParams (numeric vector) of the input parameters
 #Outputs	: None 
-	
-	err_mfParamsNumnerNotMatched = "Incorrect amount for mfParams\n"
 	
 	# Checks the call stack to see if a membership function is being
 	# called manually or within another function. If the former, then
@@ -1183,30 +1136,6 @@ mfValidate <- function(mfName, mfParams) {
 			errt[errc] = "Must enter a string for the name"
 			errc= errc+1
 		}
-		# The following block checks which function was called, and then 
-		# ensures that the mfParams are of the correct length.
-		if(as.character(sys.call(-1)[[1]]) == "gaussbMF") {
-			if(length(mfParams) != 5) {
-				errt[errc]= err_mfParamsNumnerNotMatched
-				errc= errc+1
-			}
-		} else if (as.character(sys.call(-1)[[1]]) == "gaussMF") {
-			if(length(mfParams) != 3) {
-				errt[errc]= err_mfParamsNumnerNotMatched
-				errc= errc+1
-			}
-		} else if (as.character(sys.call(-1)[[1]]) == "trapMF") {
-			if(length(mfParams) != 5) {
-				errt[errc]= err_mfParamsNumnerNotMatched
-				errc= errc+1
-			}
-		} else if (as.character(sys.call(-1)[[1]]) == "triMF") {
-			if(length(mfParams) != 4) {
-				errt[errc]= err_mfParamsNumnerNotMatched
-				errc= errc+1
-			}
-		} 
-		
 		# If any errors are detected, then stop the execution of the functions
 		# on the call stack and alert the user of whatever error occured.
 		if(!is.null(errt)) {
@@ -1259,9 +1188,9 @@ tippertest <- function() {
 	FIS= addVar(FIS, "output", "tip", 0:30)
 
 	#The following block is going to be input 1's membership functions
-	mf1= gaussMF("poor", 0:10, c(1.5, 0, 1))
-	mf2= gaussMF("good", 0:10, c(1.5, 5, 1))
-	mf3= gaussMF("excellent", 0:10, c(1.5, 10, 1))
+	mf1= gbellMF("poor", 0:10, c(1.5, 0, 1))
+	mf2= gbellMF("good", 0:10, c(3, 5, 1))
+	mf3= gbellMF("excellent", 0:10, c(6, 8, 1))
 	
 	#The following block is going to be input 2's membership functions
 	mf4= trapMF("rancid", 0:10, c(0, 0, 1, 3, 1))
