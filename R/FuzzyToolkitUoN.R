@@ -31,6 +31,20 @@ createMF <- function(mfType, mfName, x, mfParams, functionPostfix="_function") {
   )
 }
 
+piecelineMF_function <- function(x, mfParams) {
+  if(length(mfParams)%%2!=0) {
+    stop(err_mfParamsNumnerNotMatched)
+  }
+  size = length(mfParams)
+  x_vals = mfParams[1:(size/2)]
+  y_vals = mfParams[(size/2+1):size]
+  approx(x_vals, y_vals, xout=x)$y
+}
+
+piecelineMF <- function(mfName, x, mfParams) {
+  createMF('piecelineMF', mfName, x, mfParams)
+}
+
 gbellMF_function <- function(x, mfParams) {
   if(length(mfParams) != 3){
     stop(err_mfParamsNumnerNotMatched)
