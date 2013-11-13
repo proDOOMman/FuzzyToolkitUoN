@@ -89,7 +89,7 @@ gaussMF_function <- function(x, mfParams) {
   mean 	<- mfParams[2]
   height	<- mfParams[3]
   
-  height * exp(-(((arg - mean)^2)/(2*(sigma^2))))
+  height * exp(-(((x - mean)^2)/(2*(sigma^2))))
 }
 
 gaussMF <- function(mfName, x, mfParams)  { 
